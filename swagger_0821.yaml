@@ -1,0 +1,3526 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: 问鼎云学习Rest API
+host: learning.wdxuexi.com
+basePath: /api/v1
+schemes:
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  session_id:
+    type: apiKey
+    name: session_id
+    description: 登录后与服务器交互凭证
+    in: header
+tags:
+  - name: 用户
+    description: 用户信息及操作相关
+  - name: 课程
+    description: 课程/课件信息及操作相关
+  - name: 资讯
+    description: 资讯相关
+  - name: 评论
+    description: 课程、课件、资讯评论相关
+  - name: 问答
+    description: 问答模块相关
+  - name: 测验中心
+    description: 测验、练习、调研相关
+  - name: 首页
+    description: 首页相关
+  - name: 论坛
+    description: 论坛模块相关
+  - name: 培训班
+    description: 培训班模块相关
+  - name: 收藏
+    description: 收藏相关，问答/论坛关注也归类此处，目前支持课程/问答/帖子，可根据需要新增
+  - name: 搜索
+    description: 搜索相关，目前支持课程/课件/资讯/帖子/问答搜索
+  - name: 其他
+    description: 广告/栏目/报表等归类此处
+paths:
+  /my-info:
+    get:
+      tags:
+        - 用户
+      summary: 请求本人用户信息
+      description: 有待商榷
+      security:
+        - session_id: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/MyInfo'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  /my-info/icon:
+    patch:
+      tags:
+        - 用户
+      summary: 更新上传本人头像
+      security:
+        - session_id: []
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: formData
+          name: icon
+          description: 需要上传的文件
+          required: true
+          type: file
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/users/{id}':
+    get:
+      tags:
+        - 用户
+      summary: 根据id获取用户信息
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          description: 用户id
+          type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/User'
+        default:
+          description: 错误
+          schema:
+            $ref: '#/definitions/ApiError'
+  /login:
+    post:
+      tags:
+        - 用户
+      summary: 登录
+      description: 获取SessionID以及其他配置参数
+      parameters:
+        - in: body
+          name: body
+          description: 登录所需要json模式
+          required: true
+          schema:
+            $ref: '#/definitions/Login'
+      responses:
+        '200':
+          description: 成功返回
+          schema:
+            $ref: '#/definitions/LoginInfo'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  /logout:
+    get:
+      tags:
+        - 用户
+      summary: 登出
+      description: 登出，使sessionid失效(此接口有待商榷)
+      security:
+        - session_id: []
+      responses:
+        '200':
+          description: 成功
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  /courses:
+    get:
+      tags:
+        - 课程
+      summary: 获取课程列表
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: column
+          description: '分类id，岗位课程(id:position)/学习记录(id:history) 也归类此处'
+          type: string
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/starting-after'
+        - in: query
+          name: orderby
+          description: 排序方式
+          type: string
+          enum:
+            - new
+            - like
+            - view
+      responses:
+        '200':
+          description: 成功
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Course'
+        default:
+          description: 错误
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/courses/{id}':
+    get:
+      summary: 获取某个id课程
+      tags:
+        - 课程
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 课程id
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Course'
+        default:
+          description: 错误
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/courses/{id}/like':
+    post:
+      tags:
+        - 课程
+      summary: 课程喜欢
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 课程id
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              likeCount:
+                title: 喜欢数
+                type: integer
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/courses/{id}/favorite':
+    post:
+      tags:
+        - 课程
+      summary: 课程收藏
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 课程id
+          type: string
+      responses:
+        '200':
+          description: OK
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+    delete:
+      tags:
+        - 课程
+      summary: 课程取消收藏
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 课程id
+          type: string
+      responses:
+        '200':
+          description: OK
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/courses/{id}/star':
+    post:
+      tags:
+        - 课程
+      summary: 课程评星
+      security:
+        - session_id: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 课程id
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            properties:
+              myRating:
+                type: number
+                format: float
+                title: 我的评星分数
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              rating:
+                title: 评星分数
+                type: number
+                format: float
+              myRating:
+                title: 我的评星分数
+                type: number
+                format: float
+              ratingCount:
+                title: 评星人数
+                type: integer
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/courses/{id}/coursewares':
+    get:
+      tags:
+        - 课程
+      summary: 获取某课程所有课件
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: 课程id
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Courseware'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/coursewares/{id}':
+    get:
+      tags:
+        - 课程
+      summary: 获取某课件
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          description: 课件id
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Courseware'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/coursewares/{id}/like':
+    post:
+      tags:
+        - 课程
+      summary: 课件喜欢
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          description: 课件id
+          required: true
+          type: string
+      responses:
+        '200':
+          description: OK
+  /news:
+    get:
+      tags:
+        - 资讯
+      summary: 获取资讯列表
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: column-id
+          description: 分类id
+          type: string
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/News'
+  /comments:
+    get:
+      tags:
+        - 评论
+      summary: 获取评论列表
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: type
+          description: 评论父资源类型
+          type: string
+          required: true
+          enum:
+            - course
+            - news
+            - courseware
+            - trainingclass
+        - in: query
+          name: parent
+          description: 父资源id
+          required: true
+          type: string
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Comment'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+    post:
+      tags:
+        - 评论
+      summary: 发表评论
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: type
+          description: 评论父资源类型
+          type: string
+          required: true
+          enum:
+            - course
+            - news
+            - courseware
+            - class
+        - in: query
+          name: id
+          required: true
+          description: 父资源id
+          type: string
+        - in: body
+          name: body
+          description: 评论内容
+          required: true
+          schema:
+            type: object
+            properties:
+              description:
+                title: 评论内容
+                type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Comment'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/comments/{id}':
+    get:
+      tags:
+        - 评论
+      summary: 获取某评论
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: 评论id
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Comment'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/comments/{id}/replies':
+    get:
+      tags:
+        - 评论
+      summary: 获取某评论的回复
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: 评论id
+          type: string
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/CommentReply'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+    post:
+      tags:
+        - 评论
+      summary: 发表评论回复
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          description: 评论id
+          type: string
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              description:
+                title: 回复内容
+                type: string
+                minLength: 0
+                maxLength: 500
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/CommentReply'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  /questions:
+    get:
+      tags:
+        - 问答
+      summary: 获取问题列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+        - in: query
+          name: type
+          type: string
+          enum:
+            - myask
+            - myanswer
+            - myfav
+        - in: query
+          name: category
+          type: string
+          description: 问答分类
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Question'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+    post:
+      tags:
+        - 问答
+      summary: 发表问题
+      security:
+        - session_id: []
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: formData
+          name: pic
+          type: file
+          description: 提问图片附件
+          required: false
+        - in: formData
+          name: content
+          type: string
+          description: 提问内容
+          required: true
+          maxLength: 500
+          minLength: 10
+        - in: formData
+          name: isAnonymity
+          description: 是否是匿名
+          type: boolean
+          required: true
+          default: false
+        - in: formData
+          name: rewardValue
+          description: 悬赏积分
+          type: integer
+          minimum: 0
+          maximum: 50
+        - in: formData
+          name: categoryID
+          description: 分类id
+          type: string
+        - in: formData
+          name: trainID
+          description: 所属培训班id
+          type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Question'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/questions/{id}':
+    get:
+      tags:
+        - 问答
+      summary: 获取问答详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          description: 问答ID
+          type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Question'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/questions/{id}/favorite':
+    post:
+      tags:
+        - 问答
+      summary: 收藏/关注问题
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          type: string
+          description: 问题ID
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              favoriteCount:
+                title: 收藏/关注数
+                type: integer
+        default:
+          description: ERROR
+    delete:
+      tags:
+        - 问答
+      summary: 取消收藏/关注问题
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          type: string
+          description: 问题ID
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              favoriteCount:
+                title: 收藏/关注数
+                type: integer
+        default:
+          description: ERROR
+  '/questions/{question-id}/answers':
+    get:
+      tags:
+        - 问答
+      summary: 获取问题的回答列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: question-id
+          description: 问题ID
+          type: string
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Answer'
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+    post:
+      tags:
+        - 问答
+      summary: 发表回答
+      consumes:
+        - multipart/form-data
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: question-id
+          description: 问题ID
+          type: string
+          required: true
+        - in: formData
+          name: content
+          type: string
+          description: 回答内容
+          required: true
+          maxLength: 500
+          minLength: 10
+        - in: formData
+          name: isAnonymity
+          description: 是否是匿名
+          type: boolean
+          required: true
+          default: false
+        - in: formData
+          name: pic
+          type: file
+          description: 回答图片附件
+          required: false
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Answer'
+  '/answers/{id}/like':
+    post:
+      tags:
+        - 问答
+      summary: 回答点赞
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          description: 回答ID
+          type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              likeCount:
+                title: 点赞数
+                type: integer
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  /exams:
+    get:
+      tags:
+        - 测验中心
+      summary: 获取测验列表
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: completed
+          type: boolean
+          description: 是否已交卷
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Exam'
+  '/exams/{id}':
+    get:
+      tags:
+        - 测验中心
+      summary: 获取某个测验
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          type: string
+          description: 测验ID
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Exam'
+  '/exams/{exam-id}/test-questions':
+    get:
+      tags:
+        - 测验中心
+      summary: 获取测验题目
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: exam-id
+          type: string
+          description: 测验id
+          required: true
+      responses:
+        '200':
+          description: OK
+          headers:
+            surplusTime:
+              type: integer
+              description: 考试剩余时间，单位秒
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TestQuestion'
+        default:
+          description: ERROR
+    put:
+      tags:
+        - 测验中心
+      summary: 提交答题结果
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: exam-id
+          type: string
+          description: 测验ID
+          required: true
+        - in: body
+          name: body
+          description: 提交的答题结果
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  title: 题目ID
+                  type: string
+                type:
+                  title: 题目类型
+                  type: string
+                  enum:
+                    - single
+                    - multiple
+                    - trueOrFalse
+                    - gapFilling
+                    - essay
+                myAnswer:
+                  title: 主观题答题
+                  type: string
+                options:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        title: 选项ID
+                        type: string
+                      myAnswer:
+                        title: 我的选择
+                        type: boolean
+      responses:
+        '200':
+          description: OK
+  '/exams/{exam-id}/test-answers':
+    get:
+      tags:
+        - 测验中心
+      summary: 查看答案与解析
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: exam-id
+          type: string
+          description: 测验ID
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TestQuestion'
+        default:
+          description: ERROR
+  /exercises:
+    get:
+      tags:
+        - 测验中心
+      summary: 获取练习列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Exercise'
+        default:
+          description: ERROR
+  '/exercises/{id}':
+    get:
+      tags:
+        - 测验中心
+      summary: 获取某个练习
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: id
+          type: string
+          description: 练习ID
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Exercise'
+  '/exercises/{exercise-id}/test-questions':
+    get:
+      tags:
+        - 测验中心
+      summary: 获取练习题目
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: exercise-id
+          type: string
+          description: 练习id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/TestQuestion'
+  /surveys:
+    get:
+      tags:
+        - 测验中心
+      summary: 获取调研列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Survey'
+  '/surveys/{survey-id}':
+    get:
+      tags:
+        - 测验中心
+      summary: 调研详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: survey-id
+          type: string
+          description: 调研id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Survey'
+  '/surveys/{survey-id}/test-questions':
+    get:
+      tags:
+        - 测验中心
+      summary: 获取调研问卷
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: survey-id
+          type: string
+          description: 调研id
+          required: true
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - 测验中心
+      summary: 提交调研接口
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: survey-id
+          type: string
+          description: 调研id
+          required: true
+        - in: body
+          name: body
+          description: 提交的答题结果
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  title: 题目ID
+                  type: string
+                type:
+                  title: 题目类型
+                  type: string
+                  enum:
+                    - single
+                    - multiple
+                    - trueOrFalse
+                    - gapFilling
+                    - essay
+                myAnswer:
+                  title: 主观题答题
+                  type: string
+                options:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        title: 选项ID
+                        type: string
+                      myAnswer:
+                        title: 我的选择
+                        type: boolean
+      responses:
+        '200':
+          description: OK
+  /tasks:
+    get:
+      tags:
+        - 首页
+      summary: 任务列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/ModelObject'
+  /home-page:
+    get:
+      tags:
+        - 首页
+      summary: 首页
+      security:
+        - session_id: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              banner:
+                type: array
+                items:
+                  $ref: '#/definitions/ModelObject'
+              grid:
+                type: array
+                items:
+                  $ref: '#/definitions/ModelObject'
+              courses:
+                type: array
+                items:
+                  $ref: '#/definitions/Course'
+  /posts:
+    get:
+      tags:
+        - 论坛
+      summary: 获取帖子列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+        - in: query
+          name: category
+          description: 分类id
+          type: string
+        - in: query
+          name: flag
+          description: 标识 最新/最热/精华/我的帖子/我的收藏
+          type: string
+          enum:
+            - new
+            - hot
+            - digest
+            - myposts
+            - myreply
+            - myfav
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              top:
+                title: 置顶帖子
+                description: 当无start-after参数并且有置顶帖子时出现
+                type: array
+                maxItems: 5
+                items:
+                  $ref: '#/definitions/Post'
+              unreadCount:
+                title: 未读帖子数
+                description: 只请求第1页才返回
+                type: integer
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Post'
+    post:
+      tags:
+        - 论坛
+      summary: 发表帖子
+      consumes:
+        - multipart/form-data
+      security:
+        - session_id: []
+      parameters:
+        - in: formData
+          name: title
+          required: true
+          type: string
+        - in: formData
+          name: desc
+          required: true
+          type: string
+        - in: formData
+          name: categoryID
+          required: true
+          type: string
+        - in: formData
+          name: expertIDs
+          description: 多个隔开"|"
+          type: string
+        - in: formData
+          name: validDay
+          type: integer
+        - in: formData
+          name: isMulti
+          type: boolean
+        - in: formData
+          name: options
+          description: 格式 option base64|option base64|....
+          type: string
+        - in: formData
+          name: pic0
+          type: file
+        - in: formData
+          name: pic1
+          type: file
+        - in: formData
+          name: pic2
+          type: file
+        - in: formData
+          name: pic3
+          type: file
+        - in: formData
+          name: pic4
+          type: file
+        - in: formData
+          name: pic5
+          type: file
+        - in: formData
+          name: pic6
+          type: file
+        - in: formData
+          name: pic7
+          type: file
+        - in: formData
+          name: pic8
+          type: file
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Post'
+  '/posts/{post-id}':
+    get:
+      tags:
+        - 论坛
+      summary: 获取帖子详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Post'
+    patch:
+      tags:
+        - 论坛
+      summary: 修改帖子详情
+      description: 暂不支持图片编辑
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              desc:
+                title: 修改的帖子内容
+                type: string
+              options:
+                title: 新增投票选项
+                type: array
+                items:
+                  type: object
+                  properties:
+                    desc:
+                      title: 选项内容
+                      type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Post'
+    delete:
+      tags:
+        - 论坛
+      summary: 删除帖子
+      description: 只有发帖人本人才可以删除
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/like':
+    post:
+      tags:
+        - 论坛
+      summary: 帖子点赞
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              likeCount:
+                type: integer
+                title: 点赞数
+        default:
+          description: ERROR
+          schema:
+            $ref: '#/definitions/ApiError'
+  '/posts/{post-id}/poll':
+    post:
+      tags:
+        - 论坛
+      summary: 投票帖提交投票
+      description: 只投票帖才可使用
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+        - in: body
+          name: options
+          description: 投票选项
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  title: 投票选项id
+                  type: string
+                isSelected:
+                  title: 是否选中
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/favorite':
+    post:
+      tags:
+        - 论坛
+      summary: 帖子收藏/关注
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - 论坛
+      summary: 帖子取消收藏/关注
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/replies':
+    get:
+      tags:
+        - 论坛
+      summary: 获取帖子的回帖列表
+      description: 发帖人请求这个接口后，对应的未读回帖数需要清空
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/PostReply'
+    post:
+      tags:
+        - 论坛
+      summary: 发表回帖
+      consumes:
+        - multipart/form-data
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+        - in: formData
+          name: desc
+          required: true
+          type: string
+        - in: formData
+          name: pic0
+          type: file
+        - in: formData
+          name: pic1
+          type: file
+        - in: formData
+          name: pic2
+          type: file
+        - in: formData
+          name: pic3
+          type: file
+        - in: formData
+          name: pic4
+          type: file
+        - in: formData
+          name: pic5
+          type: file
+        - in: formData
+          name: pic6
+          type: file
+        - in: formData
+          name: pic7
+          type: file
+        - in: formData
+          name: pic8
+          type: file
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/PostReply'
+        default:
+          description: ERROR
+  '/posts/{post-id}/replies/{reply-id}':
+    delete:
+      tags:
+        - 论坛
+      summary: 删除某回帖
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          description: 帖子id
+          required: true
+        - in: path
+          name: reply-id
+          type: string
+          description: 回帖id
+          required: true
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/replies/{reply-id}/like':
+    post:
+      tags:
+        - 论坛
+      summary: 回帖点赞
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          required: true
+          description: 帖子id
+        - in: path
+          name: reply-id
+          type: string
+          description: 回帖id
+          required: true
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/replies/{reply-id}/reward':
+    post:
+      tags:
+        - 论坛
+      summary: 回帖打赏积分
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          required: true
+          description: 帖子id
+        - in: path
+          name: reply-id
+          type: string
+          description: 回帖id
+          required: true
+        - in: body
+          name: body
+          schema:
+            type: object
+            properties:
+              rewardIntegral:
+                type: integer
+                title: 要打赏的积分
+      responses:
+        '200':
+          description: OK
+  '/posts/{post-id}/replies/{reply-id}/second-replies':
+    get:
+      tags:
+        - 论坛
+      summary: 获取二级回复列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          required: true
+          description: 帖子id
+        - in: path
+          name: reply-id
+          type: string
+          description: 回帖id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/PostSecondReply'
+    post:
+      tags:
+        - 论坛
+      summary: 发表二级回复
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: post-id
+          type: string
+          required: true
+          description: 帖子id
+        - in: path
+          name: reply-id
+          type: string
+          description: 回帖id
+          required: true
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            properties:
+              desc:
+                title: 发表内容
+                type: string
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/PostSecondReply'
+  /training-registrations:
+    get:
+      tags:
+        - 培训班
+      summary: 获取培训班报名列表
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: flag
+          type: string
+          enum:
+            - history
+            - noapply
+          description: 'history:报名历史 noapply:未报名'
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/TrainingRegistration'
+  '/training-registrations/{reg-id}':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班报名详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: reg-id
+          type: string
+          required: true
+          description: 培训班报名id
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/TrainingRegistration'
+  /training-classes:
+    get:
+      tags:
+        - 培训班
+      summary: 培训班列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/TrainingClass'
+  '/training-classes/{class-id}':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/TrainingClass'
+  '/training-classes/{class-id}/users':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班成员列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/User'
+  '/training-classes/{class-id}/courses':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班课程列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Course'
+  '/training-classes/{class-id}/news':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班公告列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/News'
+  '/training-classes/{class-id}/exams':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班测验列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Exam'
+  '/training-classes/{class-id}/exercises':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班测验列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Exercise'
+  '/training-classes/{class-id}/surveys':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班调研列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Survey'
+  '/training-classes/{class-id}/evaluations':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班调研列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Survey'
+  '/training-classes/{class-id}/questions':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班问答列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+        - in: query
+          name: type
+          type: string
+          enum:
+            - myask
+            - myanswer
+            - myfav
+        - in: query
+          name: category
+          type: string
+          description: 问答分类
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Question'
+  '/training-classes/{class-id}/signs':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班签到列表
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/TrainingSign'
+  '/training-classes/{class-id}/signs/{sign-id}':
+    get:
+      tags:
+        - 培训班
+      summary: 培训班签到详情
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - in: path
+          name: sign-id
+          type: string
+          description: 签到id
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/TrainingSign'
+  '/training-classes/{class-id}/signs/{sign-id}/sign-in':
+    post:
+      tags:
+        - 培训班
+      summary: 签到
+      security:
+        - session_id: []
+      parameters:
+        - in: path
+          name: class-id
+          type: string
+          description: 培训班id
+          required: true
+        - in: path
+          name: sign-id
+          type: string
+          description: 签到id
+          required: true
+      responses:
+        '200':
+          description: OK
+  /favorite/courses:
+    get:
+      tags:
+        - 收藏
+      summary: 收藏的课程列表
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/TrainingSign'
+  /favorite/posts:
+    get:
+      tags:
+        - 收藏
+      summary: 收藏的帖子列表
+      description: 与`/posts?flag=myfav`等价
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Post'
+  /favorite/questions:
+    get:
+      tags:
+        - 收藏
+      summary: 收藏的问答列表
+      description: 与`/questions?flag=myfav`等价
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Question'
+  /search/courses-coursewares:
+    get:
+      tags:
+        - 搜索
+      summary: 课程课件混合搜索
+      security:
+        - session_id: []
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              courses:
+                title: 课程集合
+                type: array
+                maxItems: 3
+                items:
+                  $ref: '#/definitions/Course'
+              coursewares:
+                title: 课件集合
+                type: array
+                maxItems: 3
+                items:
+                  $ref: '#/definitions/Courseware'
+  /search/courses:
+    get:
+      tags:
+        - 搜索
+      summary: 课程搜索
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Course'
+  /search/coursewares:
+    get:
+      tags:
+        - 搜索
+      summary: 课件搜索
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Courseware'
+  /search/news:
+    get:
+      tags:
+        - 搜索
+      summary: 课件搜索
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/News'
+  /search/posts:
+    get:
+      tags:
+        - 搜索
+      summary: 课件搜索
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Post'
+  /search/questions:
+    get:
+      tags:
+        - 搜索
+      summary: 课件搜索
+      security:
+        - session_id: []
+      parameters:
+        - $ref: '#/parameters/starting-after'
+        - $ref: '#/parameters/limit'
+      responses:
+        '200':
+          description: OK
+          schema:
+            type: object
+            properties:
+              pagination:
+                $ref: '#/definitions/Pagination'
+              data:
+                type: array
+                items:
+                  $ref: '#/definitions/Question'
+  /advertisement:
+    get:
+      tags:
+        - 其他
+      summary: 获取最新广告
+      security:
+        - session_id: []
+      responses:
+        '200':
+          description: 成功
+          schema:
+            $ref: '#/definitions/Advertisement'
+        default:
+          description: 错误
+          schema:
+            $ref: '#/definitions/ApiError'
+  /columns:
+    get:
+      tags:
+        - 其他
+      summary: 获取栏位信息
+      security:
+        - session_id: []
+      parameters:
+        - in: query
+          name: parent
+          description: 父栏位id，为空则返回根栏位
+          type: string
+      responses:
+        '200':
+          description: 成功
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Column'
+        default:
+          description: error
+          schema:
+            $ref: '#/definitions/ApiError'
+  /client-version:
+    get:
+      tags:
+        - 其他
+      summary: 检查客户端版本
+      parameters:
+        - in: query
+          name: ver
+          type: string
+          required: true
+        - in: query
+          name: os
+          type: integer
+          required: true
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/ClientVersion'
+definitions:
+  User:
+    type: object
+    title: 用户信息
+    properties:
+      id:
+        title: 用户id
+        type: string
+      jid:
+        title: xmppid
+        type: string
+      name:
+        title: 用户名称
+        type: string
+      icon:
+        title: 头像URL
+        type: string
+      gender:
+        title: 性别
+        type: string
+        enum:
+          - man
+          - woman
+      jobNumber:
+        title: 工号
+        type: integer
+      department:
+        title: 部门
+        type: string
+      position:
+        title: 职位
+        type: string
+      mobileNumber:
+        title: 手机号码
+        type: string
+      shortNumber:
+        title: 短号
+        type: string
+      phoneNumber:
+        title: 电话号码
+        type: string
+      email:
+        title: 邮箱地址
+        type: string
+  MyInfo:
+    type: object
+    title: 我的信息
+    properties:
+      id:
+        title: 用户id
+        type: string
+      jid:
+        title: xmppid
+        type: string
+      pushID:
+        title: jpush area
+        description: 当是本人，必须返回
+        type: string
+      pushTags:
+        title: jPush tag
+        description: '本人，必须返回,由"|"隔开'
+        type: string
+      name:
+        title: 用户名称
+        type: string
+      icon:
+        title: 头像URL
+        type: string
+      gender:
+        title: 性别
+        type: string
+        enum:
+          - man
+          - woman
+      jobNumber:
+        title: 工号
+        type: integer
+      department:
+        title: 部门
+        type: string
+      position:
+        title: 职位
+        type: string
+      mobileNumber:
+        title: 手机号码
+        type: string
+      shortNumber:
+        title: 短号
+        type: string
+      phoneNumber:
+        title: 电话号码
+        type: string
+      email:
+        title: 邮箱地址
+        type: string
+      exp:
+        title: 经验值
+        type: integer
+        format: int64
+      credit:
+        title: 学分
+        type: integer
+        format: int64
+      integration:
+        title: 积分
+        type: integer
+        format: int64
+      integralUrl:
+        title: 积分详情URL
+        type: string
+      detailUrl:
+        title: 详情URL
+        type: string
+      preExp:
+        title: 上一级积分
+        type: integer
+        format: int64
+      nextExp:
+        title: 下一级积分
+        type: integer
+        format: int64
+      expTitle:
+        title: 经验头衔
+        type: string
+  Login:
+    type: object
+    properties:
+      loginname:
+        title: 登录名
+        description: 用户名/手机号码/邮箱
+        type: string
+      password:
+        title: 密码
+        description: 经过MD5加密后前后去掉1位的字符串
+        type: string
+      os:
+        title: 设备类型
+        description: '33:Android 44:IOS'
+        type: integer
+        enum:
+          - 33
+          - 44
+  LoginInfo:
+    type: object
+    properties:
+      sessionID:
+        title: 会话ID
+        description: 作为用户登录的唯一标识
+        type: string
+      pwdIsDefault:
+        title: 密码是否默认
+        description: 默认则提示用户修改密码
+        type: boolean
+      userName:
+        title: 用户名
+        description: 客户端作为缓存的唯一标识
+        type: string
+      xmppID:
+        title: xmpp服务器用户名
+        type: string
+      xmppPwd:
+        title: xmpp服务器登录密码
+        type: string
+      xmppHost:
+        type: string
+      xmppManager:
+        title: xmpp服务器系统帐号
+        description: 客户端判断消息是否是系统消息
+        type: string
+  Advertisement:
+    type: object
+    properties:
+      id:
+        title: 广告id
+        description: 广告的唯一标识
+        type: string
+      imageUrl:
+        title: 图片URL
+        type: string
+      url:
+        title: 跳转URL
+        type: string
+      timeout:
+        title: 显示时间 单位为秒
+        type: integer
+        format: int32
+  Column:
+    type: object
+    properties:
+      id:
+        title: 栏位id
+        type: string
+      title:
+        title: 栏位标题
+        type: string
+      type:
+        title: 栏位类型
+        type: string
+      group:
+        title: 分组
+        description: 同级情况下根据此参数分割
+        type: integer
+      count:
+        title: 对应资源个数
+        description: 如我的收藏个数
+        type: integer
+      childCount:
+        title: 子栏位个数
+        type: integer
+  Course:
+    type: object
+    title: 课程
+    properties:
+      id:
+        title: 课程id
+        type: string
+      title:
+        title: 课程标题
+        type: string
+      desc:
+        title: 课程简介
+        type: string
+      credits:
+        title: 学分
+        type: integer
+      author:
+        title: 作者
+        type: string
+      language:
+        title: 课程语言
+        type: string
+      category:
+        title: 所属分类
+        type: string
+      level:
+        title: 课程等级
+        type: string
+      version:
+        title: 课程版本号
+        type: string
+      imageUrl:
+        title: 课程图片
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+      browseCount:
+        title: 浏览数
+        type: integer
+      likeCount:
+        title: 喜欢数
+        type: integer
+      commentCount:
+        title: 评论数
+        type: integer
+      isliked:
+        title: 用户是否已喜欢
+        type: boolean
+      enableComment:
+        title: 课程是否可以评论
+        type: boolean
+      enableDownload:
+        title: 课程是否可以下载
+        type: boolean
+      enableLike:
+        title: 课程是否可以喜欢
+        type: boolean
+      isfavorited:
+        title: 用户是否已收藏此课程
+        type: boolean
+      rating:
+        title: 课程评星等级
+        type: number
+        format: float
+      myRating:
+        title: 用户的评星等级
+        type: number
+        format: float
+      ratingCount:
+        title: 给出评星的用户总数
+        type: integer
+      shareUrl:
+        title: 外部分享界面的url
+        type: string
+      marks:
+        title: 课程标记集合
+        type: array
+        items:
+          $ref: '#/definitions/CourseMark'
+  CourseMark:
+    type: object
+    title: 课程标签
+    properties:
+      id:
+        title: 标识id
+        type: string
+      title:
+        title: 标识标题
+        type: string
+  Courseware:
+    type: object
+    title: 课件
+    properties:
+      id:
+        title: 课件id
+        type: string
+      title:
+        title: 课件标题
+        type: string
+      type:
+        title: 课件类型
+        type: string
+      url:
+        title: 课件在线地址
+        type: string
+      zipUrl:
+        title: 课件zip包下载地址
+        type: string
+      commentCount:
+        title: 评论数
+        type: integer
+      enableComment:
+        title: 课件是否可评论
+        type: boolean
+      enableLike:
+        title: 课程是否可喜欢
+        type: boolean
+      isLiked:
+        title: 是否已喜欢
+        type: boolean
+      isLearned:
+        title: 是否已学
+        type: boolean
+      teacher:
+        title: 讲师名称
+        type: string
+      shareUrl:
+        title: 外部分享URL
+        type: string
+  News:
+    type: object
+    title: 资讯
+    properties:
+      id:
+        title: 资讯id
+        type: string
+      title:
+        title: 资讯标题
+        type: string
+      desc:
+        title: 资讯简介
+        type: string
+      headImageUrl:
+        title: 头条图片URL
+        type: string
+      imageUrl:
+        title: 图片URL
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+      category:
+        title: 所属分类
+        type: string
+      browseCount:
+        title: 浏览数
+        type: integer
+      likeCount:
+        title: 喜欢数
+        type: integer
+      commentCount:
+        title: 评论数
+        type: integer
+      isliked:
+        title: 是否已喜欢
+        type: boolean
+      enableComment:
+        title: 是否可评论
+        type: boolean
+      enableLike:
+        title: 是否可喜欢
+        type: boolean
+      url:
+        title: 在线浏览地址
+        type: string
+  Comment:
+    type: object
+    title: 评论
+    properties:
+      id:
+        title: 评论id
+        type: string
+      desc:
+        title: 评论内容
+        type: string
+        maximum: 500
+        minimum: 8
+      authorName:
+        title: 评论作者名称
+        type: string
+      authorID:
+        title: 评论作者id
+        type: string
+      authorIcon:
+        title: 评论作者头像URL
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+      replyCount:
+        title: 回复数
+        type: integer
+        minimum: 0
+      replies:
+        title: 回复集合
+        type: array
+        minItems: 0
+        maxItems: 2
+        items:
+          $ref: '#/definitions/CommentReply'
+  CommentReply:
+    type: object
+    title: 评论回复
+    properties:
+      id:
+        title: 回复id
+        type: string
+      desc:
+        title: 回复内容
+        type: string
+        minimum: 8
+        maximum: 500
+      authorName:
+        title: 评论作者名称
+        type: string
+      authorID:
+        title: 评论作者id
+        type: string
+      authorIcon:
+        title: 评论作者头像URL
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+  Question:
+    type: object
+    title: 问题
+    properties:
+      id:
+        title: 问题ID
+        type: string
+      desc:
+        title: 问题内容
+        type: string
+      authorID:
+        title: 作者id
+        type: string
+      authorName:
+        title: 作者名称
+        type: string
+      authorIcon:
+        title: 作者头像URL
+        type: string
+      publishDate:
+        title: 发表时间
+        type: string
+        format: date-time
+      categoryID:
+        type: string
+        title: 所属分类ID
+      categoryTitle:
+        type: string
+        title: 所属分类标题
+      favoriteCount:
+        type: integer
+        title: 收藏/关注数
+      isFavorited:
+        type: boolean
+        title: 是否已收藏/关注
+      answerCount:
+        type: integer
+        title: 回答数
+      rewardValue:
+        type: integer
+        title: 悬赏积分
+      isSolved:
+        type: boolean
+        title: 是否已解决
+      isAnonymity:
+        type: boolean
+        title: 是否是匿名
+      isTop:
+        type: boolean
+        title: 是否置顶
+      picture:
+        $ref: '#/definitions/Picture'
+  Answer:
+    type: object
+    title: 回答
+    properties:
+      id:
+        title: 回答ID
+        type: string
+      desc:
+        title: 回答内容
+        type: string
+      authorID:
+        title: 作者ID
+        type: string
+      authorName:
+        title: 作者名称
+        type: string
+      authorIcon:
+        title: 作者头像URL
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+      isBest:
+        title: 是否是最佳答案
+        type: boolean
+      likeCount:
+        title: 点赞数
+        type: integer
+      isLiked:
+        title: 是否已点赞
+        type: boolean
+      isAnonymity:
+        title: 是否匿名
+        type: boolean
+      picture:
+        $ref: '#/definitions/Picture'
+      owerItem:
+        title: 我的对象
+        type: object
+        properties:
+          id: 
+            type: string
+            title: 我的对象id
+  Picture:
+    type: object
+    title: 图片
+    properties:
+      url:
+        type: string
+        title: 原图URL
+      thumbUrl:
+        type: string
+        title: 缩略图URL
+  Exam:
+    type: object
+    title: 测验
+    properties:
+      id:
+        title: 测验ID
+        type: string
+      title:
+        title: 测验名称
+        type: string
+      desc:
+        title: 测验简介
+        type: string
+      passingMark:
+        title: 及格分数
+        type: number
+        format: float
+      fullMark:
+        title: 满分
+        type: number
+        format: float
+      duration:
+        title: 考试时长 单位秒
+        type: integer
+      startDate:
+        title: 开始时间
+        type: string
+        format: date-time
+      expireDate:
+        title: 截止时间
+        type: string
+        format: date-time
+      testQuestionCount:
+        title: 题目数量
+        type: integer
+      isCompleted:
+        title: 是否已完成
+        type: boolean
+      testScores:
+        title: 得分
+        type: number
+        format: float
+      completedDate:
+        title: 完成时间
+        type: string
+        format: date-time
+      enableTest:
+        title: 当前可否考试
+        type: boolean
+      testTotalCount:
+        title: 可考试次数
+        type: integer
+      testCurrCount:
+        title: 当前已考试次数
+        type: integer
+      enableViewAnswer:
+        title: 是否可以考试
+        type: boolean
+      ranking:
+        title: 排名
+        type: integer
+      rankingUrl:
+        title: 排名URL
+        type: string
+      userCompletedCount:
+        title: 完成测验人数
+        type: integer
+  Exercise:
+    title: 练习
+    type: object
+    properties:
+      id:
+        title: 练习ID
+        type: string
+      title:
+        title: 练习标题
+        type: string
+      questionCount:
+        title: 题目个数
+        type: integer
+        format: int32
+      desc:
+        title: 练习简介
+        type: string
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+  Survey:
+    title: 调研
+    type: object
+    properties:
+      id:
+        title: 调研ID
+        type: string
+      title:
+        title: 标题
+        type: string
+      expireDate:
+        title: 截止时间
+        type: string
+        format: date-time
+      questionCount:
+        title: 题目数量
+        type: integer
+        format: int32
+      userCompletedCount:
+        title: 已完成人数
+        type: integer
+      desc:
+        type: string
+        title: 简介
+      isCompleted:
+        type: boolean
+        title: 是否已完成
+      analyzeUrl:
+        type: string
+        title: 调研结果URL
+  TestQuestion:
+    title: 测试题目
+    description: 测验/练习/调研
+    type: object
+    properties:
+      id:
+        title: 题目ID
+        type: string
+      type:
+        title: 题目类型
+        type: string
+        enum:
+          - single
+          - multiple
+          - trueOrFalse
+          - gapFilling
+          - essay
+      category:
+        title: 题目分类标题
+        description: 调研独有
+        type: string
+      desc:
+        title: 题干
+        type: string
+      scores:
+        title: 题分
+        type: number
+        description: 测验才有此字段
+        format: float
+      testScores:
+        title: 得分
+        description: 查看测验答案才有此字段
+        type: number
+        format: float
+      isWrong:
+        title: 是否错误
+        description: 只在查看答案与解析返回，否则默认
+        type: boolean
+        default: false
+      answerKeys:
+        title: 答案解析
+        type: string
+      rightAnswer:
+        title: 主观题的正确答案
+        description: 填空/问答才有此字段，并且只有查看测验答案/获取练习才返回
+        type: string
+      myAnswer:
+        title: 主观题我的答案
+        description: 同rightAnswer
+        type: string
+      options:
+        type: array
+        title: 选择选项
+        items:
+          $ref: '#/definitions/TestOption'
+  TestOption:
+    type: object
+    title: 题目选项
+    properties:
+      id:
+        title: 选项ID
+        type: string
+      desc:
+        title: 选项内容
+        type: string
+      rightAnswer:
+        title: 正确答案是否选中
+        description: 查看测验答案才有此字段
+        type: boolean
+      myAnswer:
+        title: 我的答案是否选中
+        description: 查看测验答案才有此字段
+        type: boolean
+  Post:
+    type: object
+    title: 帖子
+    properties:
+      id:
+        title: 帖子id
+        type: string
+      title:
+        title: 帖子标题
+        type: string
+      desc:
+        title: 帖子内容
+        type: string
+        maxLength: 500
+      type:
+        title: 帖子类型
+        description: 'poll:投票贴/subject:主题贴'
+        type: string
+        enum:
+          - poll
+          - subject
+      categoryID:
+        title: 所属分类id
+        type: string
+      categoryTitle:
+        title: 所属分类
+        type: string
+      tags:
+        title: 帖子标签
+        description: 如热门/精华等 如有多个标签用"|"隔开
+        type: string
+      favoriteCount:
+        title: 帖子收藏/关注数
+        type: integer
+      isFavorited:
+        title: 用户是否已收藏/关注
+        type: boolean
+      publishDate:
+        title: 发布时间
+        type: string
+        format: date-time
+      replyCount:
+        title: 回帖数
+        type: integer
+      unreadCount:
+        title: 未读回帖数
+        type: integer
+        description: 只针对作者的请求 其他返回0或者不传
+      isFromPC:
+        title: 是否来自后台数据，备用（后续专门针对富文本解析处理）
+        type: boolean
+      authorID:
+        title: 作者ID
+        type: string
+        description: 客户端根据此参数来判断自己是不是发帖人
+      authorName:
+        title: 作者名称
+        type: string
+      authorIcon:
+        title: 作者头像
+        type: string
+      authorIntegral:
+        title: 作者积分
+        type: integer
+      authorDepartment:
+        title: 作者所在部门
+        type: string
+      likeCount:
+        title: 喜欢数
+        type: integer
+      isLiked:
+        title: 是否已喜欢
+        type: boolean
+      pictures:
+        title: 图片集合
+        type: array
+        maxItems: 9
+        items:
+          $ref: '#/definitions/Picture'
+      isMulti:
+        title: 投票是否是多选
+        type: boolean
+      isOutdate:
+        title: 投票是否已过期
+        type: boolean
+      expireDate:
+        title: 截止日期
+        type: string
+        format: date-time
+      isPolled:
+        title: 是否已经投票
+        type: boolean
+      polledPeopleCount:
+        title: 已投票人数
+        type: integer
+      options:
+        title: 投票选项集合
+        type: array
+        items:
+          $ref: '#/definitions/PollOption'
+  PollOption:
+    title: 投票选项
+    type: object
+    properties:
+      id:
+        title: 选项id
+        type: string
+      desc:
+        title: 选项内容
+        type: string
+      polledCount:
+        title: 已投票数
+        description: 由于有可能是多选，所欲pollCount的总和不一定等于polledPeopleCount
+        type: integer
+      isSelected:
+        title: 是否已选中
+        type: boolean
+  PostReply:
+    title: 帖子回帖
+    type: object
+    properties:
+      id:
+        title: 回帖id
+        type: string
+      desc:
+        title: 回帖内容
+        type: string
+      authorID:
+        title: 作者id
+        description: 客户端根据此参数判断是不是回帖人
+        type: string
+      authorName:
+        title: 作者名称
+        type: string
+      authorIcon:
+        title: 作者头像
+        type: string
+      authorIntegral:
+        title: 作者积分
+        type: integer
+      authorDepartment:
+        title: 作者所在部门
+        type: string
+      publishDate:
+        title: 发表时间
+        type: string
+        format: date-time
+      likeCount:
+        title: 喜欢数
+        type: integer
+      isLiked:
+        title: 是否已喜欢
+        type: boolean
+      paidIntegral:
+        title: 已打赏积分
+        description: 未打赏返回0
+        type: integer
+      pictures:
+        type: array
+        maxItems: 9
+        items:
+          $ref: '#/definitions/Picture'
+      secondReplyCount:
+        type: integer
+        title: 二级回复数
+      secondReplies:
+        type: array
+        maxItems: 2
+        items:
+          $ref: '#/definitions/PostSecondReply'
+  PostSecondReply:
+    title: 帖子二级回复
+    type: object
+    properties:
+      id:
+        title: 二级回复id
+        type: string
+      desc:
+        title: 回复内容
+        type: string
+        maxLength: 500
+      authorID:
+        title: 作者ID
+        type: string
+      authorName:
+        title: 作者名称
+        type: string
+      authorIcon:
+        title: 作者头像
+        type: string
+      publishDate:
+        title: 发表时间
+        type: string
+        format: date-time
+  TrainingRegistration:
+    type: object
+    title: 培训班报名
+    properties:
+      id:
+        title: 报名id
+        type: string
+      title:
+        title: 报名标题
+        type: string
+      trainID:
+        title: 关联培训班ID
+        type: string
+      imageUrl:
+        title: 报名图片地址
+        type: string
+      desc:
+        title: 报名简介
+        type: string
+      trainingTime:
+        title: 培训时间
+        type: string
+      registrationTime:
+        title: 报名时间
+        type: string
+      validTime:
+        title: 有效剩余天数
+        type: integer
+      address:
+        title: 培训地址
+        type: string
+      plannedNumber:
+        title: 计划参与人数
+        type: integer
+      enableRegister:
+        title: 是否可以报名
+        type: boolean
+      state:
+        title: 报名状态
+        type: string
+        description: 'unRegistered:尚未报名且未结束 registered:已报名 over:已结束且未报名'
+        enum:
+          - unRegistered
+          - registered
+          - over
+      registerTime:
+        title: 报名时间
+        description: 也作为用户是否报名判断
+        type: string
+        format: date-time
+      auditState:
+        title: 审核状态
+        description: '前置条件为已报名 即registerTime不为空 inProcess:正在审核 pass:审核通过 notPass:审核不通过'
+        type: string
+        enum:
+          - inProcess
+          - pass
+          - notPass
+      enableCancel:
+        title: 是否允许取消报名
+        type: boolean
+      registerdCount:
+        title: 已报名人数
+        type: string
+      enablePreview:
+        title: 是否允许预览课程
+        type: boolean
+      teacherName:
+        title: 班主任名称
+        type: string
+  TrainingClass:
+    title: 培训班
+    type: object
+    properties:
+      id:
+        title: 培训班ID
+        type: string
+      title:
+        title: 培训班标题
+        type: string
+      imageUrl:
+        title: 图片地址
+        type: string
+      classNumber:
+        title: 班级编号
+        type: string
+      address:
+        title: 培训地址
+        type: string
+      trainingMode:
+        title: 培训方式
+        type: string
+      trainingTime:
+        title: 培训时间
+        description: date-time~date-time
+        type: string
+      memberCount:
+        title: 成员人数
+        type: integer
+      desc:
+        title: 简介
+        type: string
+      remark:
+        title: 备注
+        type: string
+      roomID:
+        title: xmpp聊天室ID
+        type: string
+      roomJID:
+        title: xmpp聊天室JID
+        type: string
+      roomPwd:
+        title: xmpp聊天室密码
+        type: string
+      columns:
+        title: 栏目集合
+        type: array
+        items:
+          $ref: '#/definitions/TrainingColumn'
+      state:
+        title: 开班状态
+        type: string
+        description: 'inProgress:正在进行 notStart:即将开班 over:已结束'
+        enum:
+          - inProgress
+          - notStart
+          - over
+      isTeacher:
+        title: 是否是班主任
+        type: boolean
+      teacherName:
+        title: 班主任名称
+        type: string
+  TrainingColumn:
+    title: 培训班栏目
+    type: object
+    properties:
+      type:
+        title: 栏目标识
+        type: string
+        description: >-
+          info:公告 sign:签到 course:课程 exercise:练习 exam:测验 survey:调研 evaluation:评估
+          comment:评论 qa:朋友圈
+        enum:
+          - info
+          - sign
+          - course
+          - exercise
+          - exam
+          - survey
+          - evaluation
+          - comment
+          - qa
+      title:
+        title: 栏目标题
+        type: string
+  TrainingSign:
+    title: 培训班签到
+    type: object
+    properties:
+      id:
+        title: 签到ID
+        type: string
+      title:
+        title: 签到标题
+        type: string
+      trainID:
+        title: 关联培训班ID
+        type: string
+      signTime:
+        title: 可签到时段
+        type: string
+      state:
+        title: 签到状态
+        type: string
+        description: 'notSign:未签到 signed:已签到'
+        enum:
+          - notSign
+          - signed
+      mode:
+        title: 签到方式
+        type: string
+        description: 'normal:普通签到 qrcode:二维码签到'
+        enum:
+          - normal
+          - qrcode
+      signedTime:
+        title: 用户签到时间
+        type: string
+        format: date-time
+      signedCount:
+        title: 已签到人数
+        type: integer
+      isTeacher:
+        title: 是否是班主任
+        type: boolean
+  ClientVersion:
+    title: 客户端版本信息
+    type: object
+    properties:
+      version:
+        title: 最新版本号
+        type: string
+      releaseNote:
+        title: 发布信息
+        type: string
+      forceUpdate:
+        title: 是否强制更新
+        type: boolean
+      downUrl:
+        title: 版本下载地址
+        type: string
+  ModelObject:
+    type: object
+    title: 通用业务对象
+    description: 可通过flag去请求资源各自的详细数据
+    properties:
+      id:
+        title: 对象ID
+        type: string
+      title:
+        title: 对象标题
+        type: string
+      flag:
+        title: 对象标识
+        description: 比如该对象是课程，则course
+        type: string
+        enum:
+          - course
+          - news
+          - courseware
+          - question
+          - trainClass
+          - column
+          - exam
+          - exercise
+          - survey
+      type:
+        title: 对象类型
+        type: string
+        description: 作为某一对象的类型，如column中积分商城creditstore
+      imageUrl:
+        title: 对象图片的URL
+        type: string
+      url:
+        title: 对象对应url
+        type: string
+      desc:
+        title: 对象简介
+        type: string
+      count:
+        title: 对象中业务个数
+        description: 一般用于column资源
+        type: integer
+  Pagination:
+    type: object
+    title: 分页信息
+    properties:
+      startingAfter:
+        type: string
+        title: 第1个数据的id
+      limit:
+        type: integer
+        title: 每页个数
+      nextUri:
+        type: string
+        title: 下一页URI
+        description: 如null则是最后一页
+  ApiError:
+    type: object
+    properties:
+      id:
+        title: 错误id
+        type: string
+      message:
+        title: 错误信息
+        type: string
+parameters:
+  limit:
+    in: query
+    name: limit
+    description: 分页返回最大个数
+    type: integer
+  starting-after:
+    in: query
+    name: starting-after
+    description: 分页从某个对象后开始
+    type: string
