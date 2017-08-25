@@ -5,18 +5,27 @@ const commonUtils = require('../CommonUtils')
 const parseEntity = require('./ParseEntity')
 var outputDir1
 var packageStr1
+/**
+ * 开放  生成api
+ */
 module.exports.makeAPI = function (swaggerJSON, outputDir, packageStr) {
     outputDir1 = outputDir
     packageStr1 = packageStr
     makeApiFile(swaggerJSON)
 }
-
+/**
+ * 生成api文件
+ * @param {JSON} swaggerJSON swagger文档JSON对象
+ */
 function makeApiFile(swaggerJSON) {
     var pack = getApiPackAndImport() + getApiCode(swaggerJSON)
     commonUtils.writeFile(outputDir1, 'DefaultApi.kt', pack)
     writeEnvelopFile()
 }
 
+/**
+ * 拼接 import/package 
+ */
 function getApiPackAndImport() {
     var pack = util.format('package %s\n\n', packageStr1)
     var impt = util.format('import %s.%s.*\n', packageStr1, commonUtils.entityDir)
@@ -27,30 +36,47 @@ function getApiPackAndImport() {
     return pack + impt
 }
 
+/**
+ * 拼接 注释及代码
+ * @param {JSON} swaggerJSON 
+ */
 function getApiCode(swaggerJSON) {
+    //生成 version title 说明注释
     var anno = util.format('/**\n * apiVersion:%s\n * %s\n * %s\n * Created by codegen-auto on %s\n */\n',
         swaggerJSON.info.version, swaggerJSON.info.title, swaggerJSON.info.description ? swaggerJSON.info.description : "", commonUtils.getDateNow())
+    //生成 类定义 api地址的static变量
     var code = util.format('interface DefaultApi{\n    companion object {\n        val base_path = "%s"\n   }',
         swaggerJSON.schemes[0] + "://" + swaggerJSON.host + (swaggerJSON.basePath.endsWith('/') ? swaggerJSON.basePath : swaggerJSON.basePath + "/"))
     code += getApiFunCode(swaggerJSON)
     return anno + code
 }
 
+/**
+ * 生成api方法
+ * @param {JSON} swaggerJSON 
+ */
 function getApiFunCode(swaggerJSON) {
     var totalCode = ''
+    //遍历path集合
     for (var path in swaggerJSON.paths) {
-        // path = '/exams/{exam-id}/test-questions'
+        //每个path中http方法集合
         for (var method in swaggerJSON.paths[path]) {
+            //获取方法JSON对象
             var funJSON = swaggerJSON.paths[path][method]
+            //拼接方法注释，生成 标题/说明
             var annotation = util.format('\n\n   /**\n    * %s\n    * %s\n', funJSON.summary, funJSON.description ? funJSON.description : "")
+            //拼接retrofit http方法注解
             var code = util.format('   @%s("%s")\n', method.toUpperCase(), path.substring(1))
+            //构建方法名
             var funName = commonUtils.buildFunName(path, method)
+            //拼接方法名
             code += util.format('   fun %s(', funName)
+            //如果有安全验证，则作为方法参数放入，目前只支持apikey方式  oauth2待研究
             if (funJSON.security) {
                 for (var securityJSON of funJSON.security) {
                     for (var securityName in securityJSON) {
                         var securityDefinitionJSON = swaggerJSON.securityDefinitions[securityName]
-                        annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(securityDefinitionJSON.name), securityDefinitionJSON.description)
+                        annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(securityDefinitionJSON.name), securityDefinitionJSON.description?securityDefinitionJSON.description:'')
                         code += code.endsWith('(') ? '' : '\n       '
                         code += getParamCode(securityDefinitionJSON, true, funName)
                         //只获取第1个
@@ -58,24 +84,30 @@ function getApiFunCode(swaggerJSON) {
                     }
                 }
             }
+            //如果有方法参数 遍历 
             if (funJSON.parameters) {
                 for (var parameterJSON of funJSON.parameters) {
+                    //如果参数是ref到公共参数 则取公共参数JSON 如分页参数
                     if (parameterJSON.$ref) {
                         var refList = parameterJSON.$ref.split('/')
                         parameterJSON = swaggerJSON[refList[1]][refList[2]]
 
                     }
-                    annotation += util.format('    * @param %s %s\n', parameterJSON.name, parameterJSON.description)
+                    //添加参数注释说明
+                    annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(parameterJSON.name), parameterJSON.description?parameterJSON.description:'')
+                    //添加参数代码 
                     code += code.endsWith('(') ? '' : '\n       '
                     code += getParamCode(parameterJSON, false, funName)
 
                 }
             }
+            //方法参数代码结束
             code = code.substring(0, code.length - 1)
             code += ')'
-
+            //方法返回类型构建  基于Rxjava的Observable
             if (funJSON.responses['200']) {
                 code += ': Observable'
+                //只提取成功的，错误直接apiError
                 if (funJSON.responses['200'].schema) {
                     var schema = funJSON.responses['200'].schema
                     var genStr = null
@@ -130,13 +162,20 @@ function getApiFunCode(swaggerJSON) {
     return totalCode + '\n}'
 }
 
-
+/**
+ * 
+ * 生成参数代码
+ * @param {JSON} parameterJSON 参数JSON对象
+ * @param {*} isSecurity 是否是安全验证调用的
+ * @param {*} funName 方法名称，方便对应非$ref object类名定义及生成 
+ */
 function getParamCode(parameterJSON, isSecurity, funName) {
     var template = '@%s%s %s,'
     var paramIn, paramInName, paramNameAndType
 
     paramIn = commonUtils.stringFirst2UpperCase(parameterJSON.in)
 
+    //对应不同传入类型方式，生成各注解
     switch (parameterJSON.in) {
         case 'header':
         case 'query':
@@ -153,8 +192,10 @@ function getParamCode(parameterJSON, isSecurity, funName) {
             paramIn = 'Part'
             break
     }
+    //生成参数对应kotlin类型
     paramNameAndType = commonUtils.buildParamName(parameterJSON.name) + ": "
     if (parameterJSON.type) {
+        //formdata对应okhttp3 string及file
         if (parameterJSON.in === 'formData') {
             if (parameterJSON.type === 'file') {
                 paramNameAndType += 'MultipartBody.Part'
@@ -162,6 +203,7 @@ function getParamCode(parameterJSON, isSecurity, funName) {
                 paramNameAndType += 'RequestBody'
             }
         } else {
+            //参数类型映射
             switch (parameterJSON.type) {
                 case 'string':
                     paramNameAndType += "String"
@@ -183,21 +225,28 @@ function getParamCode(parameterJSON, isSecurity, funName) {
                     break
             }
         }
+    //如果参数对应的是个object
     } else if (parameterJSON.schema) {
+        //如果是引用definitions 则获取object名 否则继续解析
         if (parameterJSON.schema.$ref) {
             paramNameAndType += parameterJSON.schema.$ref.split('/')[2]
         } else {
+            //如果是个集合
             if (parameterJSON.schema.type === 'array') {
+                //对应kotlin List
                 paramNameAndType += 'List<'
                 var items = parameterJSON.schema.items
                 if (items['$ref']) {
+                    //如果是引用definitions 则直接获取对象名
                     paramNameAndType += items['$ref'].split('/')[2] + '>'
                 } else {
+                    //如果不是 则组合一个唯一的对象名，并创建类文件 
                     var name = commonUtils.stringFirst2UpperCase(funName) + commonUtils.stringFirst2UpperCase(parameterJSON.name)
                     paramNameAndType += name + '>'
                     parseEntity.makeEntityFile(name, items, outputDir1, packageStr1)
                 }
             } else {
+                //如果是一个对象 同上
                 var name = commonUtils.stringFirst2UpperCase(funName) + commonUtils.stringFirst2UpperCase(parameterJSON.name)
                 paramNameAndType += name
                 parseEntity.makeEntityFile(name, parameterJSON.schema, outputDir1, packageStr1)
@@ -205,6 +254,7 @@ function getParamCode(parameterJSON, isSecurity, funName) {
         }
 
     }
+    //确定参数可不可以为空
     if (isSecurity || parameterJSON.required || parameterJSON.required === true) {
     } else {
         paramNameAndType += '?'

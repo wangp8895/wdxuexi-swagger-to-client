@@ -34,22 +34,27 @@ program.version('1.0.0')
     })
     .parse(process.argv)
 
+//没有指定参数则提示    
 if (process.argv.length <= 2) {
     console.error('未指定任何参数，`-h` 获取更多帮助！')
     process.exit(0)
 }
 
+//没有指定swagger文档路径，则提示
 if (!program.inputfile) {
     console.error('未指定输入文档路径！，`-i [yaml/json file]` 指定输入文档路径')
     process.exit(0)
 }
 
+
 var inputFile = program.inputfile
 var outputDir = program.outputdir
+//如果没有指定输出路径，定义一个默认的输出路径
 if (!outputDir) {
     outputDir = path.join(__dirname, "output")
 }
 
+//没有指定包名，定义一个默认
 var packageStr = program.package
 if (!packageStr) {
     packageStr = "com.wunding.wdxuexi.api"
