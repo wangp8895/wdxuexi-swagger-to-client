@@ -84,7 +84,7 @@ function getCode(entityName, entityJSON) {
         var paramCode = getParamCode(property, propertyJSON, entityName)
         var description = paramCode[2] ? entitiesJSON1[paramCode[1]].description : propertyJSON.description
         //拼接变量注释
-        annotation += util.format(annoTemplateParam, property, paramCode[2] ? entitiesJSON1[paramCode[1]].title : propertyJSON.title, description ? description : '')
+        annotation += util.format(annoTemplateParam, property, paramCode[2] ? entitiesJSON1[paramCode[1]].title : paramCode[1], description ? description : '')
         code += paramCode[0]
     }
     code = code.substring(0, code.length - 1)
@@ -128,6 +128,26 @@ function getParamCode(property, propertyJSON, entityName) {
             var items = propertyJSON.items
             if (items['$ref']) {
                 varType += items['$ref'].split('/')[2] + ">"
+            } else if (items['type']) {
+                var name;
+                switch (items['type']) {
+                    case 'string':
+                        name = 'String';
+                        break;
+                    case 'integer':
+                        if (propertyJSON.format === 'int64')
+                            name = "Long"
+                        else
+                            name = "Int"
+                        break
+                    case 'boolean':
+                        name = "Boolean"
+                        break
+                    case 'number':
+                        name = "Float"
+                        break
+                }
+                varType += name+ ">";
             } else {
                 var name = entityName + commomUtil.stringFirst2UpperCase(property)
                 varType += name + ">"

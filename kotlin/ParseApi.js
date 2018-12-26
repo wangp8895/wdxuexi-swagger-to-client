@@ -61,6 +61,7 @@ function getApiFunCode(swaggerJSON) {
     for (var path in swaggerJSON.paths) {
         //每个path中http方法集合
         for (var method in swaggerJSON.paths[path]) {
+            if (method === 'parameters') continue;
             //获取方法JSON对象
             var funJSON = swaggerJSON.paths[path][method]
             //拼接方法注释，生成 标题/说明
@@ -71,12 +72,13 @@ function getApiFunCode(swaggerJSON) {
             var funName = commonUtils.buildFunName(path, method)
             //拼接方法名
             code += util.format('   fun %s(', funName)
+            console.log(code);
             //如果有安全验证，则作为方法参数放入，目前只支持apikey方式  oauth2待研究
             if (funJSON.security) {
                 for (var securityJSON of funJSON.security) {
                     for (var securityName in securityJSON) {
                         var securityDefinitionJSON = swaggerJSON.securityDefinitions[securityName]
-                        annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(securityDefinitionJSON.name), securityDefinitionJSON.description?securityDefinitionJSON.description:'')
+                        annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(securityDefinitionJSON.name), securityDefinitionJSON.description ? securityDefinitionJSON.description : '')
                         code += code.endsWith('(') ? '' : '\n       '
                         code += getParamCode(securityDefinitionJSON, true, funName)
                         //只获取第1个
@@ -94,15 +96,15 @@ function getApiFunCode(swaggerJSON) {
 
                     }
                     //添加参数注释说明
-                    annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(parameterJSON.name), parameterJSON.description?parameterJSON.description:'')
+                    annotation += util.format('    * @param %s %s\n', commonUtils.buildParamName(parameterJSON.name), parameterJSON.description ? parameterJSON.description : '')
                     //添加参数代码 
                     code += code.endsWith('(') ? '' : '\n       '
                     code += getParamCode(parameterJSON, false, funName)
-
                 }
+                //方法参数代码结束
+                code = code.substring(0, code.length - 1)
             }
-            //方法参数代码结束
-            code = code.substring(0, code.length - 1)
+
             code += ')'
             //方法返回类型构建  基于Rxjava的Observable
             if (funJSON.responses['200']) {
@@ -225,7 +227,7 @@ function getParamCode(parameterJSON, isSecurity, funName) {
                     break
             }
         }
-    //如果参数对应的是个object
+        //如果参数对应的是个object
     } else if (parameterJSON.schema) {
         //如果是引用definitions 则获取object名 否则继续解析
         if (parameterJSON.schema.$ref) {

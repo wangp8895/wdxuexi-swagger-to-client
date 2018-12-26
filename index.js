@@ -40,6 +40,8 @@ if (process.argv.length <= 2) {
     process.exit(0)
 }
 
+console.log(program.package)
+
 //没有指定swagger文档路径，则提示
 if (!program.inputfile) {
     console.error('未指定输入文档路径！，`-i [yaml/json file]` 指定输入文档路径')
